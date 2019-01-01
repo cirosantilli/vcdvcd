@@ -1,8 +1,19 @@
 #!/usr/bin/env python
-from distutils.core import setup
+
+from setuptools import setup, find_packages
+
+def readme():
+    with open('README.md') as f:
+        return f.read()
+
 setup(
     name='vcdvcd',
-    py_modules=['vcdvcd'],
-    scripts=['vcdcat'],
-    version='1.0',
+    version='1.0.1',
+    description='Python Verilog value change dump (VCD) parser library',
+    long_description=readme(),
+    url='https://github.com/cirosantilli/vcdvcd',
+    author='Ciro Santilli',
+    author_email='ciro.santilli.contact@gmail.com',
+    packages=find_packages(),
+    scripts=['vcdvcd/vcdcat'],
 )
