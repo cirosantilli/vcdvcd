@@ -1,1 +1,1 @@
-from vcdvcd.vcdvcd import *
+from .vcdvcd import *
