@@ -13,6 +13,13 @@ else:
     vcd_path = 'counter_tb.vcd'
 pp = PrettyPrinter()
 
+
+print('# get_signals()')
+vcd = VCDVCD(vcd_path, only_sigs=True)
+sigs = vcd.get_signals()
+pp.pprint(sigs)
+for i in sigs:
+    print(i.split("."))
 print('# get_data()')
 vcd = VCDVCD(vcd_path)
 pp.pprint(vcd.get_data())
@@ -21,6 +28,16 @@ print()
 print('# get_data(only_sigs=True)')
 vcd = VCDVCD(vcd_path, only_sigs=True)
 PrettyPrinter().pprint(vcd.get_data())
+print()
+
+print('# get_sorted_sig_dumps')
+vcd = VCDVCD(vcd_path)
+pp.pprint(vcd.get_sorted_sig_dumps())
+print()
+
+print('# get_dumps()')
+vcd = VCDVCD(vcd_path)
+pp.pprint(vcd.get_dumps())
 print()
 
 print('# get_signals()')
@@ -49,8 +66,10 @@ if len_signals > 0:
 print()
 
 print('# __init__(print_dumps=True)')
-VCDVCD(vcd_path, print_dumps=True)
+myString = VCDVCD(vcd_path, print_dumps=True)
+print(type(myString))
 print()
+
 
 print('# __init__(print_dumps=True, store_tvs=False)')
 vcd = VCDVCD(vcd_path, print_dumps=True, store_tvs=False)

@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name='vcdvcd',
-    version='1.0.6',
+    version='1.0.7',
     description='Python Verilog value change dump (VCD) parser library + the nifty vcdcat VCD command line viewer',
     long_description=readme(),
     long_description_content_type='text/plain',

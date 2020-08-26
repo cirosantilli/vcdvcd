@@ -56,6 +56,8 @@ class VCDVCD(object):
         self._signals = []
         self._store_tvs = store_tvs
         self._signal_changed = False
+        self._dumps = []
+        self._sorted = []
 
         all_sigs = not signals
         cur_sig_vals = {}
@@ -86,15 +88,18 @@ class VCDVCD(object):
                         time, value, identifier_code,
                         print_deltas, print_dumps, cur_sig_vals
                     )
-                elif line0 == '#':
-                    if print_dumps and (not print_dumps_deltas or self._signal_changed):
+                elif line0 == '#': # this is where the string is built for printing in print_dumps
+                    if not print_dumps_deltas or self._signal_changed:
                         ss = []
                         ss.append('{}'.format(time))
-                        for i, ref in enumerate(print_dumps_refs):
+                       
+                        for i, ref in enumerate(print_dumps_refs): # Builds the data for one line of the print_dumps table
                             identifier_code = references_to_ids[ref]
                             value = cur_sig_vals[identifier_code]
-                            ss.append('{0:>{1}s}'.format(self._to_hex(value), references_to_widths[ref]))
-                        print(' '.join(ss))
+                            ss.append('{0:>{1}s}'.format(self._to_hex(value), references_to_widths[ref])) 
+                        self._dumps.append(ss)
+                        if print_dumps:
+                            print(' '.join(ss)) # prints a line of values for the print_dumps table
                     time = int(line[1:])
                     self._endtime = time
                     self._signal_changed = False
@@ -103,24 +108,29 @@ class VCDVCD(object):
                         break
                     if print_dumps:
                         print('0 time')
-                        if signals:
-                            print_dumps_refs = signals
-                        else:
-                            print_dumps_refs = sorted(self._data[i]['references'][0] for i in cur_sig_vals.keys())
-                        for i, ref in enumerate(print_dumps_refs, 1):
-                            print('{} {}'.format(i, ref))
-                            if i == 0:
-                                i = 1
-                            identifier_code = references_to_ids[ref]
-                            size = int(self._data[identifier_code]['size'])
-                            width = max(((size // 4)), int(math.floor(math.log10(i))) + 1)
-                            references_to_widths[ref] = width
+                    self._sorted.append('0 time')
+                    if signals:
+                        print_dumps_refs = signals
+                    else:
+                        print_dumps_refs = sorted(self._data[i]['references'][0] for i in cur_sig_vals.keys())
+                    for i, ref in enumerate(print_dumps_refs, 1):
+                        sig_string = '{} {}'.format(i, ref)
+                        self._sorted.append(sig_string)
+                        if print_dumps:
+                            print(sig_string) # Prints the signals one by one... for the print_dumps table legend
+                        if i == 0:
+                            i = 1
+                        identifier_code = references_to_ids[ref]
+                        size = int(self._data[identifier_code]['size'])
+                        width = max(((size // 4)), int(math.floor(math.log10(i))) + 1)
+                        references_to_widths[ref] = width
+                    if print_dumps:
                         print()
                         print('0 '.format(i, ), end='')
                         for i, ref in enumerate(print_dumps_refs, 1):
-                            print('{0:>{1}d} '.format(i, references_to_widths[ref]), end='')
+                            print('{0:>{1}d} '.format(i, references_to_widths[ref]), end='') # Prints the header of the print_dumps table
                         print()
-                        print('=' * (sum(references_to_widths.values()) + len(references_to_widths) + 1))
+                        print('=' * (sum(references_to_widths.values()) + len(references_to_widths) + 1)) #prints header separator in print_dumps table               
                 elif '$scope' in line:
                     hier.append(line.split()[2])
                 elif '$upscope' in line:
@@ -143,9 +153,19 @@ class VCDVCD(object):
                             }
                         self._data[identifier_code]['references'].append(reference)
                         references_to_ids[reference] = identifier_code
-                        if print_dumps:
-                            cur_sig_vals[identifier_code] = 'x'
-
+                        cur_sig_vals[identifier_code] = 'x'
+    def get_dumps(self):
+        """
+        Get the print_dumps values returned instead of just printed
+        """
+        return self._dumps  
+    
+    def get_sorted_sig_dumps(self):
+        """
+        Get the print_dumps sorted list of signals
+        """       
+        return self._sorted
+       
     def get_data(self):
         """
         Get the main parsed VCD data.
@@ -180,14 +200,14 @@ class VCDVCD(object):
         if identifier_code in self._data:
             entry = self._data[identifier_code]
             self._signal_changed = True
+            cur_sig_vals[identifier_code] = value
             if self._store_tvs:
                 if 'tv' not in entry:
                     entry['tv'] = []
                 entry['tv'].append((time, value))
             if print_deltas:
                 print("{} {} {}".format(time, self._to_hex(value), entry['references'][0]))
-            if print_dumps:
-                cur_sig_vals[identifier_code] = value
+                
 
     @staticmethod
     def _to_hex(s):
