@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import math
 import re
-from decimal import Decimal as D
+from decimal import Decimal
 
 class VCDVCD(object):
 
@@ -155,7 +155,7 @@ class VCDVCD(object):
                             if '$end'  in line:
                                 break
                     timescale = ' '.join(line.split()[1:-1])
-                    magnitude = D(re.findall(r"\d+|$", timescale)[0])
+                    magnitude = Decimal(re.findall(r"\d+|$", timescale)[0])
                     if magnitude not in [1, 10, 100]:
                         print("Error: Magnitude of timescale must be one of 1, 10, or 100. "\
                             + "Current magnitude is: {}".format(magnitude))
@@ -169,10 +169,10 @@ class VCDVCD(object):
                         "ps": '1e-12',
                         "fs": '1e-15',
                     }[unit]
-                    self._timescale["timescale"] = magnitude * D(factor)
+                    self._timescale["timescale"] = magnitude * Decimal(factor)
                     self._timescale["magnitude"] = magnitude
                     self._timescale["unit"]   = unit
-                    self._timescale["factor"] = D(factor)
+                    self._timescale["factor"] = Decimal(factor)
 
     def get_data(self):
         """
