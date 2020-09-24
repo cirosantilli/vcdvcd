@@ -9,7 +9,7 @@
 :toclevels: 6
 :toc-title:
 
-Python Verilog value change dump (VCD) parser library + the nifty <<vcdcat>> VCD command line viewer.
+Python Verilog value change dump (VCD) parser library + the nifty <<vcdcat>> VCD command line pretty printer.
 
 toc::[]
 
@@ -33,21 +33,21 @@ This allows you to direcly edit the source code here and see updates to importer
 Use <<vcdcat>> directly from this repo without installing:
 
 ....
-./vcdcat -h
+vcdcat -h
 ....
 
 == vcdcat
 
-Nifty terminal CLI VCD viewer:
+Nifty terminal CLI VCD pretty printer:
 
 ....
-./vcdcat -h
+vcdcat -h
 ....
 
 Dump all signal values:
 
 ....
-./vcdcat counter_tb.vcd
+vcdcat counter_tb.vcd
 ....
 
 Output:
@@ -90,10 +90,10 @@ Output:
 25 0 0 2 0 2
 ....
 
-Dump only a some of the signals:
+Dump only selected signals:
 
 ....
-./vcdcat counter_tb.vcd top.enable top.reset
+vcdcat counter_tb.vcd top.enable top.reset
 ....
 
 Output:
@@ -112,15 +112,23 @@ Output:
 25 0 0
 ....
 
-Only times for which at least one signal changed are shown.
+Note how only times for which at least one selected signal changed are shown.
 
-Dump only the signals that changed for each time:
+=== `vcdcat --deltas`
+
+Only print the signals that changed for each time.
+
+If no signals changed at a given time, don't print anything for that time.
+
+This will potentially make the output much much smaller for large VCD files.
+
+Example:
 
 ....
-./vcdcat -d counter_tb.vcd
+vcdcat -d counter_tb.vcd
 ....
 
-Output:
+Output excerpt:
 
 ....
 0 x counter_tb.top.out[1:0]
@@ -136,67 +144,118 @@ Output:
 3 0 counter_tb.clock
 3 0 counter_tb.reset
 4 1 counter_tb.clock
-5 0 counter_tb.clock
-5 1 counter_tb.enable
-6 1 counter_tb.out[1:0]
-6 1 counter_tb.top.out[1:0]
-6 1 counter_tb.clock
-7 0 counter_tb.clock
-8 2 counter_tb.out[1:0]
-8 2 counter_tb.top.out[1:0]
-8 1 counter_tb.clock
-9 0 counter_tb.clock
-10 3 counter_tb.out[1:0]
-10 3 counter_tb.top.out[1:0]
-10 1 counter_tb.clock
-11 0 counter_tb.clock
-12 0 counter_tb.out[1:0]
-12 0 counter_tb.top.out[1:0]
-12 1 counter_tb.clock
-13 0 counter_tb.clock
-14 1 counter_tb.out[1:0]
-14 1 counter_tb.top.out[1:0]
-14 1 counter_tb.clock
-15 0 counter_tb.clock
-16 2 counter_tb.out[1:0]
-16 2 counter_tb.top.out[1:0]
-16 1 counter_tb.clock
-17 0 counter_tb.clock
-18 3 counter_tb.out[1:0]
-18 3 counter_tb.top.out[1:0]
-18 1 counter_tb.clock
-19 0 counter_tb.clock
-20 0 counter_tb.out[1:0]
-20 0 counter_tb.top.out[1:0]
-20 1 counter_tb.clock
-21 0 counter_tb.clock
-22 1 counter_tb.out[1:0]
-22 1 counter_tb.top.out[1:0]
-22 1 counter_tb.clock
-23 0 counter_tb.clock
-24 2 counter_tb.out[1:0]
-24 2 counter_tb.top.out[1:0]
-24 1 counter_tb.clock
-25 0 counter_tb.clock
-25 0 counter_tb.enable
-26 1 counter_tb.clock
 ....
 
-== About this repository
+Where for example the line:
 
-The VCD format is defined by the Verilog standard, and can be generated with `$dumpvars`.
+....
+0 x counter_tb.top.out[1:0]
+....
 
-The entire VCD is parsed at once. For a stream implementation, see: link:https://github.com/GordonMcGregor/vcd_parser[].
+means that:
 
-Forked from Sameer Gauria's version, which is currently only hosted on PyPI with email patches and no public bug tracking: link:https://pypi.python.org/pypi/Verilog_VCD[]. There is also a read-only mirror at: link:https://github.com/zylin/Verilog_VCD[].
+* at time `0`
+* the signal `counter_tb.top.out[1:0]`
+* had value `x`
 
-Library usage examples:
+As without `--deltas`, we can also view deltas only for selected signals, e.g.:
+
+....
+./vcdcat -d counter_tb.vcd 'counter_tb.top.out[1:0]'
+....
+
+outputs:
+
+....
+0 x counter_tb.top.out[1:0]
+2 0 counter_tb.top.out[1:0]
+6 1 counter_tb.top.out[1:0]
+8 2 counter_tb.top.out[1:0]
+10 3 counter_tb.top.out[1:0]
+12 0 counter_tb.top.out[1:0]
+14 1 counter_tb.top.out[1:0]
+16 2 counter_tb.top.out[1:0]
+18 3 counter_tb.top.out[1:0]
+20 0 counter_tb.top.out[1:0]
+22 1 counter_tb.top.out[1:0]
+24 2 counter_tb.top.out[1:0]
+....
+
+== API usage
+
+Library usage examples can be seen at link:example.py[] and run with:
 
 ....
 ./examples.py
 ....
 
+By default, data is parsed at once into a per-signal format that allows for efficient random access, for example:
+
+....
+from vcdvcd import VCDVCD
+
+# Do the parsing.
+vcd = VCDVCD('counter_tb.vcd')
+
+# List all human readable signal names.
+print(vcd.references_to_ids.keys())
+
+# View all signal data.
+print(vcd.data)
+
+# Get a signal by human readable name.
+signal = vcd['counter_tb.top.out[1:0]']
+
+# The a list of time/value delta pairs for this signal.
+tv = signal.tv
+assert(tv[0] == (0, 'x'))
+assert(tv[1] == (2, '0'))
+assert(tv[2] == (6, '1'))
+
+# Random access value of the signal at a given time.
+# Note how it works for times between deltas as well.
+assert(signal[0] == 'x')
+assert(signal[1] == 'x')
+assert(signal[2] == '0')
+assert(signal[3] == '0')
+....
+
+But you can also use this library in a purely stream callback fashion as shown in the examples by doing something like:
+
+....
+class MyStreamParserCallbacks(vcdvcd.StreamParserCallbacks):
+    def value(
+        self,
+        vcd,
+        time,
+        value,
+        identifier_code,
+        cur_sig_vals,
+    ):
+        print('{} {} {}'.format(time, value, identifier_code))
+vcd = VCDVCD('counter_tb.vcd', callbacks=MyStreamParserCallbacks(), store_tvs=False)
+....
+
+`store_tvs=False` instructs the library to not store all the signal value change data,  which would likely just take up useless space in your streaming application. Only signal metadata is stored in that case.
+
+== About this repository
+
+The VCD format is defined by the Verilog standard, and can be generated with `$dumpvars`.
+
+This repo was originally forked from Sameer Gauria's version, which is currently only hosted on PyPI with email patches and no public bug tracking: link:https://pypi.python.org/pypi/Verilog_VCD[]. There is also a read-only mirror at: link:https://github.com/zylin/Verilog_VCD[].
+
+Another stream implementation can be seen at: link:https://github.com/GordonMcGregor/vcd_parser[].
+
 == Release procedure
+
+Ensure that basic tests don't blow up:
+
+....
+./examples.py
+./test.py
+./vcdcat counter_tb.py
+./vcdcat -d counter_tb.py
+....
 
 Update the `version` field in `setup.py`:
 
@@ -207,9 +266,10 @@ vim setup.py
 Create a tag and push it:
 
 ....
+v=v1.0.1
 git add setup.py
-git commit -m v1.0.1 v1.0.1
-git tag -a v1.0.1 -m v1.0.1
+git commit -m $v $v
+git tag -a $v -m $v
 git push --follow-tags
 ....
 

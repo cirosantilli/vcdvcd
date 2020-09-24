@@ -10,3 +10,9 @@ __pycache__/
 
 # virtualenv
 /.venv
+
+# Temporary files.
+tmp.*
+*.tmp
+*.tmp.*
+tmp

@@ -1,8 +1,12 @@
 from __future__ import print_function
 
+import bisect
 import math
 import re
 from decimal import Decimal
+
+from pprint import PrettyPrinter
+pp = PrettyPrinter()
 
 class VCDVCD(object):
 
@@ -14,36 +18,65 @@ class VCDVCD(object):
         self,
         vcd_path,
         only_sigs=False,
-        print_deltas=False,
-        print_dumps=False,
-        print_dumps_deltas=True,
-        # TODO: make the default None, and return empty in that case.
-        signals=[],
+        signals=None,
         store_tvs=True,
+        callbacks=None,
     ):
         """
         Parse a VCD file, and store information about it in this object.
 
         The bulk of the parsed data can be obtained with :func:`parse_data`.
 
+        :ivar data: Parsed VCD data presented in an per-signal indexed list of deltas.
+                    Maps short (often signle character) signal names present in the VCD,
+                    to Signal objects.
+        :vartype data: Dict[str,Signal]
+
+        :ivar deltas: Parsed VCD data presented in exactly the same format as the input,
+                    with all signals mixed up, but sorted in time.
+        :vartype deltas: Dict[str,Any]
+
+        :ivar endtime: Last timestamp present in the last parsed VCD.
+
+                       This can be extracted from the data, but we also cache while parsing.
+        :vartype endtime: int
+
+        :ivar references_to_ids: map of long-form human readable signal names to the short
+                       style VCD dump values
+        :vartype references_to_ids: Dict[str,str]
+
+        :ivar signals: The set of unique signal names from the parsed VCD,
+                       in the order they are defined in the file.
+
+                        This can be extracted from the data, but we also cache while parsing.
+        :vartype signals: List[str]
+
+        :ivar timescale: A dictionary of key/value pairs describing the timescale.
+
+                        List of keys:
+
+                        - "timescale": timescale in seconds (SI unit)
+                        - "number": time number as specified in the VCD file
+                        - "unit": time unit as specified in the VCD file
+                        - "factor": numerical factor derived from the unit
+        :vartype timescale: Dict
+
         :type vcd_path: str
+        :param vcd_path: path to the VCD file to parse
+
         :param store_tv: if False, don't store time values in the data
                          Still parse them sequentially however, which may
                          make them be printed if printing is enabled.
                          This makes huge files more manageable, but prevents
                          fast random access.
+
         :type  store_tv: bool
+
         :param only_sigs: only parse the signal names under $scope and exit.
                         The return value will only contain the signals section.
                         This speeds up parsing if you only want the list of signals.
         :type  only_sigs: bool
-        :param print_deltas: print the value of each signal change as hey are parsed
-        :type print_deltas: bool
-        :param print_dumps: print the value of all signals for each time
-                           in which any tracked signal changes
-        :type print_dumps: bool
-        :param print_dumps_deltas: only dump selected signals if one of them just changed
-        :type print_dumps_deltas: bool
+
         :param signals: only consider signals in this list.
                         If empty, all signals are considered.
                         Printing commands however will only print every wire
@@ -51,21 +84,27 @@ class VCDVCD(object):
                         Any printing done uses this signal order.
                         If repeated signals are given, they are printed twice.
         :type  signals: List[str]
-        :rtype: Dict[str,Any]
-        """
-        self._data = {}
-        self._endtime = 0
-        self._signals = []
-        self._store_tvs = store_tvs
-        self._signal_changed = False
-        self._timescale = {}
 
+        :param callbacks: callbacks that get called as the VCD file is parsed
+        :type callbacks: StreamParserCallbacks
+        """
+        self.data = {}
+        self.endtime = 0
+        self.references_to_ids = {}
+        self.signals = []
+        self.timescale = {}
+        self.signal_changed = False
+
+        self._store_tvs = store_tvs
+
+        if signals is None:
+            signals = []
+        if callbacks is None:
+            callbacks = StreamParserCallbacks()
         all_sigs = not signals
         cur_sig_vals = {}
         hier = []
         num_sigs = 0
-        references_to_ids = {}
-        references_to_widths = {}
         time = 0
         with open(vcd_path, 'r') as f:
             while True:
@@ -79,51 +118,21 @@ class VCDVCD(object):
                 if line0 in self._VECTOR_VALUE_CHANGE:
                     value, identifier_code = line[1:].split()
                     self._add_value_identifier_code(
-                        time, value, identifier_code,
-                        print_deltas, print_dumps, cur_sig_vals
-                    )
+                        time, value, identifier_code, cur_sig_vals, callbacks)
                 elif line0 in self._VALUE:
                     value = line0
                     identifier_code = line[1:]
                     self._add_value_identifier_code(
-                        time, value, identifier_code,
-                        print_deltas, print_dumps, cur_sig_vals
-                    )
+                        time, value, identifier_code, cur_sig_vals, callbacks)
                 elif line0 == '#':
-                    if print_dumps and (not print_dumps_deltas or self._signal_changed):
-                        ss = []
-                        ss.append('{}'.format(time))
-                        for i, ref in enumerate(print_dumps_refs):
-                            identifier_code = references_to_ids[ref]
-                            value = cur_sig_vals[identifier_code]
-                            ss.append('{0:>{1}s}'.format(self._to_hex(value), references_to_widths[ref]))
-                        print(' '.join(ss))
+                    callbacks.time(self, time, cur_sig_vals)
                     time = int(line[1:])
-                    self._endtime = time
-                    self._signal_changed = False
+                    self.endtime = time
+                    self.signal_changed = False
                 elif '$enddefinitions' in line:
                     if only_sigs:
                         break
-                    if print_dumps:
-                        print('0 time')
-                        if signals:
-                            print_dumps_refs = signals
-                        else:
-                            print_dumps_refs = sorted(self._data[i]['references'][0] for i in cur_sig_vals.keys())
-                        for i, ref in enumerate(print_dumps_refs, 1):
-                            print('{} {}'.format(i, ref))
-                            if i == 0:
-                                i = 1
-                            identifier_code = references_to_ids[ref]
-                            size = int(self._data[identifier_code]['size'])
-                            width = max(((size // 4)), int(math.floor(math.log10(i))) + 1)
-                            references_to_widths[ref] = width
-                        print()
-                        print('0 '.format(i, ), end='')
-                        for i, ref in enumerate(print_dumps_refs, 1):
-                            print('{0:>{1}d} '.format(i, references_to_widths[ref]), end='')
-                        print()
-                        print('=' * (sum(references_to_widths.values()) + len(references_to_widths) + 1))
+                    callbacks.enddefinitions(self, signals, cur_sig_vals)
                 elif '$scope' in line:
                     hier.append(line.split()[2])
                 elif '$upscope' in line:
@@ -137,17 +146,12 @@ class VCDVCD(object):
                     path = '.'.join(hier)
                     reference = path + '.' + name
                     if (reference in signals) or all_sigs:
-                        self._signals.append(reference)
-                        if identifier_code not in self._data:
-                            self._data[identifier_code] = {
-                                'references': [],
-                                'size': size,
-                                'var_type': type,
-                            }
-                        self._data[identifier_code]['references'].append(reference)
-                        references_to_ids[reference] = identifier_code
-                        if print_dumps:
-                            cur_sig_vals[identifier_code] = 'x'
+                        self.signals.append(reference)
+                        if identifier_code not in self.data:
+                            self.data[identifier_code] = Signal(size, type)
+                        self.data[identifier_code].references.append(reference)
+                        self.references_to_ids[reference] = identifier_code
+                        cur_sig_vals[identifier_code] = 'x'
                 elif '$timescale' in line:
                     if not '$end' in line:
                         while True:
@@ -169,70 +173,237 @@ class VCDVCD(object):
                         "ps": '1e-12',
                         "fs": '1e-15',
                     }[unit]
-                    self._timescale["timescale"] = magnitude * Decimal(factor)
-                    self._timescale["magnitude"] = magnitude
-                    self._timescale["unit"]   = unit
-                    self._timescale["factor"] = Decimal(factor)
-
-    def get_data(self):
-        """
-        Get the main parsed VCD data.
-        """
-        return self._data
-
-    def get_endtime(self):
-        """
-        Last timestamp present in the last parsed VCD.
-
-        This can be extracted from the data, but we also cache while parsing.
-
-        :rtype: int
-        """
-        return self._endtime
-
-    def get_signals(self):
-        """
-        Get the set of unique signal names from the parsed VCD,
-        in the order they are defined in the file.
-
-        This can be extracted from the data, but we also cache while parsing.
-
-        :rtype: List[str]
-        """
-        return self._signals
-
-    def get_timescale(self):
-        """
-        Get a dictionary of key/value pairs describing the timescale.
-
-        List of keys:
-
-            "timescale": The timescale in seconds (SI unit)
-            "number"   : The time number as specified in the VCD file
-            "unit"     : The time unit as specified in the VCD file
-            "factor"   : The numerical factor derived from the unit
-        """
-        return self._timescale
+                    self.timescale["timescale"] = magnitude * Decimal(factor)
+                    self.timescale["magnitude"] = magnitude
+                    self.timescale["unit"]   = unit
+                    self.timescale["factor"] = Decimal(factor)
 
     def _add_value_identifier_code(
         self, time, value, identifier_code,
-        print_deltas, print_dumps, cur_sig_vals
+        cur_sig_vals, callbacks
     ):
-        if identifier_code in self._data:
-            entry = self._data[identifier_code]
-            self._signal_changed = True
+        # May not be there due to signal selection.
+        if identifier_code in self.data:
+            callbacks.value(
+                self,
+                time=time,
+                value=value,
+                identifier_code=identifier_code,
+                cur_sig_vals=cur_sig_vals
+            )
+            entry = self.data[identifier_code]
+            self.signal_changed = True
             if self._store_tvs:
-                if 'tv' not in entry:
-                    entry['tv'] = []
-                entry['tv'].append((time, value))
-            if print_deltas:
-                print("{} {} {}".format(time, self._to_hex(value), entry['references'][0]))
-            if print_dumps:
-                cur_sig_vals[identifier_code] = value
+                entry.tv.append((time, value))
+            cur_sig_vals[identifier_code] = value
 
-    @staticmethod
-    def _to_hex(s):
-        for c in s:
-            if not c in '01':
-                return c
-        return hex(int(s, 2))[2:]
+    def __getitem__(self, refname):
+        """
+        :type refname: str
+        :param refname: human readable name of a signal (reference)
+
+        :return: the signal for the given reference
+        :rtype: Signal
+        """
+        return self.data[self.references_to_ids[refname]]
+
+
+    def get_data(self):
+        """
+        Deprecated, use the member variable directly.
+        """
+        return self.data
+
+    def get_endtime(self):
+        """
+        Deprecated, use the member variable directly.
+        """
+        return self.endtime
+
+    def get_signals(self):
+        """
+        Deprecated, use the member variable directly.
+        """
+        return self.signals
+
+    def get_timescale(self):
+        """
+        Deprecated, use the member variable directly.
+        """
+        return self.timescale
+
+class Signal(object):
+    """
+    Contains signal metadata and all value/updates pairs for a given signal.
+
+    Allows for efficient binary search of the value of this signal at a given time.
+
+    :param size: number of bits in the signal
+    :type size: int
+
+    :param size: e.g. 'wire' or 'reg'
+    :type var_type: str
+
+    :ivar references: list of human readable long names for the signal
+    :vartype references: List[str]
+
+    :ivar tv: sorted list of time/new value pairs. Signal values are be strings
+              instead of integers to represents values such as 'x'.
+    :vartype tv: List[Tuple[int,str]]
+    """
+    def __init__(self, size, var_type):
+        self.size = size
+        self.var_type = var_type
+        self.references = []
+        self.tv = []
+
+    def __getitem__(self, time):
+        """
+        Get the value of a signal at a given time.
+
+        :type time: int
+        :rtype time: str
+        """
+        left = bisect.bisect_left(self.tv, (time, ''))
+        if self.tv[left][0] == time:
+            i = left
+        else:
+            i = left - 1
+        return self.tv[i][1]
+
+    def __repr__(self):
+        return pp.pformat(self.__dict__)
+
+class StreamParserCallbacks(object):
+    def enddefinitions(
+        self,
+        vcd,
+        signals,
+        cur_sig_vals
+    ):
+        """
+        Called at $enddefinitions, i.e. once after the wire metadata finishes parsing at the
+        at the start start of parsing.
+        """
+        pass
+
+    def time(
+        self,
+        vcd,
+        time,
+        cur_sig_vals
+    ):
+        """
+        Called whenever a new time is found.
+        """
+        pass
+
+    def value(
+        self,
+        vcd,
+        time,
+        value,
+        identifier_code,
+        cur_sig_vals,
+    ):
+        """
+        Called whenever the value of a signal changes.
+        """
+        pass
+
+class PrintDeltasStreamParserCallbacks(StreamParserCallbacks):
+    """
+    https://github.com/cirosantilli/vcdvcd#vcdcat-deltas
+    """
+    def value(
+        self,
+        vcd,
+        time,
+        value,
+        identifier_code,
+        cur_sig_vals,
+    ):
+        print('{} {} {}'.format(
+            time,
+            binary_string_to_hex(value),
+            vcd.data[identifier_code].references[0])
+        )
+
+class PrintDumpsStreamParserCallbacks(StreamParserCallbacks):
+    def __init__(self, deltas=True):
+        """
+        Print the values of all signals whenever a new signal entry
+        of any signal is parsed.
+
+        :param deltas:
+            - if True, print only if a value in the selected signals since the
+                previous time If no values changed, don't print anything.
+
+                This is the same format as shown at:
+                https://github.com/cirosantilli/vcdvcd#vcdcat-deltas
+                without --deltas.
+
+            - if False, print all values at all times
+        :type deltas: bool
+        """
+        self._deltas = deltas
+        self._references_to_widths = {}
+
+    def enddefinitions(
+        self,
+        vcd,
+        signals,
+        cur_sig_vals
+    ):
+        print('0 time')
+        if signals:
+            self._print_dumps_refs = signals
+        else:
+            self._print_dumps_refs = sorted(vcd.data[i].references[0] for i in cur_sig_vals.keys())
+        for i, ref in enumerate(self._print_dumps_refs, 1):
+            print('{} {}'.format(i, ref))
+            if i == 0:
+                i = 1
+            identifier_code = vcd.references_to_ids[ref]
+            size = int(vcd.data[identifier_code].size)
+            width = max(((size // 4)), int(math.floor(math.log10(i))) + 1)
+            self._references_to_widths[ref] = width
+        print()
+        print('0 '.format(i, ), end='')
+        for i, ref in enumerate(self._print_dumps_refs, 1):
+            print('{0:>{1}d} '.format(i, self._references_to_widths[ref]), end='')
+        print()
+        print('=' * (sum(self._references_to_widths.values()) + len(self._references_to_widths) + 1))
+
+    def time(
+        self,
+        vcd,
+        time,
+        cur_sig_vals
+    ):
+        if (not self._deltas or vcd.signal_changed):
+            ss = []
+            ss.append('{}'.format(time))
+            for i, ref in enumerate(self._print_dumps_refs):
+                identifier_code = vcd.references_to_ids[ref]
+                value = cur_sig_vals[identifier_code]
+                ss.append('{0:>{1}s}'.format(
+                    binary_string_to_hex(value),
+                    self._references_to_widths[ref])
+                )
+            print(' '.join(ss))
+
+def binary_string_to_hex(s):
+    """
+    Convert a binary string to hexadecimal.
+
+    If any non 0/1 values are present such as 'x', return that single character
+    as a representation.
+
+    :param s: the string to be converted
+    :type s: str
+    """
+    for c in s:
+        if not c in '01':
+            return c
+    return hex(int(s, 2))[2:]

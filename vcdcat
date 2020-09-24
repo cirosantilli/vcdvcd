@@ -6,6 +6,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 import re
 import sys
 
+import vcdvcd
 from vcdvcd import VCDVCD
 
 if __name__ == '__main__':
@@ -49,7 +50,7 @@ Now get the values for signals:
         '--deltas',
         action='store_true',
         default=False,
-        help='only show signal that changed since last step',
+        help='https://github.com/cirosantilli/vcdvcd#vcdcat-deltas',
     )
     parser.add_argument(
         '-l',
@@ -85,7 +86,7 @@ Now get the values for signals:
     )
     args = parser.parse_args()
     vcd = VCDVCD(args.vcd_path, only_sigs=True)
-    all_signals = vcd.get_signals()
+    all_signals = vcd.signals
     if args.signals:
         selected_signals = []
         for s in args.signals:
@@ -108,10 +109,13 @@ Now get the values for signals:
             signals = selected_signals
         else:
             signals = []
+        if args.deltas:
+            callbacks = vcdvcd.PrintDeltasStreamParserCallbacks()
+        else:
+            callbacks = vcdvcd.PrintDumpsStreamParserCallbacks()
         VCDVCD(
             args.vcd_path,
-            print_deltas=args.deltas,
-            print_dumps=(not args.deltas),
             signals=signals,
             store_tvs=False,
+            callbacks=callbacks,
         )
