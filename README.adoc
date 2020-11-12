@@ -25,15 +25,17 @@ Install master directly from this repository for development with `--editable`:
 
 ....
 git clone https://github.com/cirosantilli/vcdvcd
+cd vcdvcd
 python -m pip install --editable . --user
 ....
 
 This allows you to direcly edit the source code here and see updates to importers from anywhere as shown at: https://stackoverflow.com/questions/35064426/when-would-the-e-editable-option-be-useful-with-pip-install/63353319#63353319[].
 
-Use <<vcdcat>> directly from this repo without installing:
+You can also use <<vcdcat>> directly from a clone without installing anything:
 
 ....
-vcdcat -h
+git clone https://github.com/cirosantilli/vcdvcd
+vcdvcd/vcdcat vcdvcd/counter_tb.vcd
 ....
 
 == vcdcat
@@ -156,7 +158,7 @@ means that:
 
 * at time `0`
 * the signal `counter_tb.top.out[1:0]`
-* had value `x`
+* changed to value `x`
 
 As without `--deltas`, we can also view deltas only for selected signals, e.g.:
 
@@ -183,7 +185,7 @@ outputs:
 
 == API usage
 
-Library usage examples can be seen at link:example.py[] and run with:
+Library usage examples can be seen at link:examples.py[] and run with:
 
 ....
 ./examples.py
@@ -206,7 +208,7 @@ print(vcd.data)
 # Get a signal by human readable name.
 signal = vcd['counter_tb.top.out[1:0]']
 
-# The a list of time/value delta pairs for this signal.
+# tv is a list of Time/Value delta pairs for this signal.
 tv = signal.tv
 assert(tv[0] == (0, 'x'))
 assert(tv[1] == (2, '0'))
@@ -253,8 +255,8 @@ Ensure that basic tests don't blow up:
 ....
 ./examples.py
 ./test.py
-./vcdcat counter_tb.py
-./vcdcat -d counter_tb.py
+./vcdcat counter_tb.vcd
+./vcdcat -d counter_tb.vcd
 ....
 
 Update the `version` field in `setup.py`:
@@ -266,9 +268,9 @@ vim setup.py
 Create a tag and push it:
 
 ....
-v=v1.0.1
+v=v2.0.2
 git add setup.py
-git commit -m $v $v
+git commit -m $v
 git tag -a $v -m $v
 git push --follow-tags
 ....

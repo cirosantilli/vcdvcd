@@ -19,16 +19,14 @@ class Test(unittest.TestCase):
                 (12,  '0'),
             ]
         )
-
-        # Random access.
         self.assertEqual(signal[0], 'x')
         self.assertEqual(signal[1], 'x')
         self.assertEqual(signal[2], '0')
         self.assertEqual(signal[3], '0')
-        self.assertEqual(signal[5], '0')
         self.assertEqual(signal[6], '1')
         self.assertEqual(signal[7], '1')
-        self.assertEqual(signal[8], '10')
+        self.assertEqual(signal[24], '10')
+        self.assertEqual(signal[25], '10')
 
 if __name__ == '__main__':
     unittest.main()

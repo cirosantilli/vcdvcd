@@ -265,10 +265,13 @@ class Signal(object):
         :rtype time: str
         """
         left = bisect.bisect_left(self.tv, (time, ''))
-        if self.tv[left][0] == time:
-            i = left
-        else:
+        if left == len(self.tv):
             i = left - 1
+        else:
+            if self.tv[left][0] == time:
+                i = left
+            else:
+                i = left - 1
         return self.tv[i][1]
 
     def __repr__(self):
