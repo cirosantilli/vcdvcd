@@ -56,9 +56,10 @@ class VCDVCD(object):
                         List of keys:
 
                         - "timescale": timescale in seconds (SI unit)
-                        - "number": time number as specified in the VCD file
-                        - "unit": time unit as specified in the VCD file
-                        - "factor": numerical factor derived from the unit
+                        - "magnitude": timescale magnitude as specified in the VCD file
+                        - "unit"     : timescale unit as specified in the VCD file (string)
+                        - "factor"   : numerical factor derived from the unit
+
         :vartype timescale: Dict
 
         :type vcd_path: str
@@ -90,6 +91,7 @@ class VCDVCD(object):
         """
         self.data = {}
         self.endtime = 0
+        self.begintime = 0
         self.references_to_ids = {}
         self.signals = []
         self.timescale = {}
@@ -106,6 +108,7 @@ class VCDVCD(object):
         hier = []
         num_sigs = 0
         time = 0
+        first_time = True
         with open(vcd_path, 'r') as f:
             while True:
                 line = f.readline()
@@ -127,6 +130,9 @@ class VCDVCD(object):
                 elif line0 == '#':
                     callbacks.time(self, time, cur_sig_vals)
                     time = int(line[1:])
+                    if first_time:
+                        self.begintime = time
+                        first_time = False
                     self.endtime = time
                     self.signal_changed = False
                 elif '$enddefinitions' in line:
