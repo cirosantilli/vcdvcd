@@ -150,7 +150,10 @@ class VCDVCD(object):
                     identifier_code = ls[3]
                     name = ''.join(ls[4:-1])
                     path = '.'.join(hier)
-                    reference = path + '.' + name
+                    if path:
+                        reference = path + '.' + name
+                    else:
+                        reference = name
                     if (reference in signals) or all_sigs:
                         self.signals.append(reference)
                         if identifier_code not in self.data:
