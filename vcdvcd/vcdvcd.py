@@ -4,8 +4,8 @@ import bisect
 import math
 import re
 from decimal import Decimal
-
 from pprint import PrettyPrinter
+
 pp = PrettyPrinter()
 
 class VCDVCD(object):
@@ -183,6 +183,9 @@ class VCDVCD(object):
                     self.timescale["magnitude"] = magnitude
                     self.timescale["unit"]   = unit
                     self.timescale["factor"] = Decimal(factor)
+            
+            for aSignal in filter( lambda x: isinstance(x, Signal),self.data):
+                aSignal.endtime = self.endtime
 
     def _add_value_identifier_code(
         self, time, value, identifier_code,
@@ -258,27 +261,42 @@ class Signal(object):
     :vartype tv: List[Tuple[int,str]]
     """
     def __init__(self, size, var_type):
-        self.size = size
-        self.var_type = var_type
+        self.size       = size
+        self.var_type   = var_type
         self.references = []
-        self.tv = []
+        self.tv         = []
+        self.endtime    = None
 
     def __getitem__(self, time):
         """
         Get the value of a signal at a given time.
 
-        :type time: int
+        :type time: Union[int, slice]
         :rtype time: str
         """
-        left = bisect.bisect_left(self.tv, (time, ''))
-        if left == len(self.tv):
-            i = left - 1
-        else:
-            if self.tv[left][0] == time:
-                i = left
-            else:
+        if isinstance( time, slice ) :
+            if not self.endtime:
+                self.endtime = self.tv[-1][0]
+            #Get the start, stop, and step from the slice
+            return [self[ii] for ii in range(*time.indices(self.endtime))]
+        elif isinstance( time, int ) :
+            if time < 0 : #Handle negative indices
+                time = 0
+
+            left = bisect.bisect_left(self.tv, (time, ''))
+            if left == len(self.tv):
                 i = left - 1
-        return self.tv[i][1]
+            else:
+                if self.tv[left][0] == time:
+                    i = left
+                else:
+                    i = left - 1
+            if i == -1:
+                return None
+            return self.tv[i][1]
+        else:
+            raise TypeError("Invalid argument type.")
+        
 
     def __repr__(self):
         return pp.pformat(self.__dict__)
