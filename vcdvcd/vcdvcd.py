@@ -20,6 +20,8 @@ class VCDVCD(object):
         only_sigs=False,
         signals=None,
         store_tvs=True,
+        store_scopes=False,
+        save_hierarchy=None,
         callbacks=None,
     ):
         """
@@ -86,9 +88,22 @@ class VCDVCD(object):
                         If repeated signals are given, they are printed twice.
         :type  signals: List[str]
 
+        :param store_scopes: if False, don't store scopes that groups signals 
+                        and possibly other scopes.
+
+        :type  store_scopes: bool
+
+        :param save_hierarchy: indicates a path where to store a json reflecting 
+                        hierarchy inside vcd.
+
+        :type  save_hierarchy: str
+
         :param callbacks: callbacks that get called as the VCD file is parsed
         :type callbacks: StreamParserCallbacks
         """
+        self.hierarchy = {}
+        self.scopes    = {}
+        scopes_stack = [self.hierarchy]
         self.data = {}
         self.endtime = 0
         self.begintime = 0
@@ -140,9 +155,19 @@ class VCDVCD(object):
                         break
                     callbacks.enddefinitions(self, signals, cur_sig_vals)
                 elif '$scope' in line:
-                    hier.append(line.split()[2])
+                    scope_name = line.split()[2]
+                    hier.append(scope_name)
+
+                    if store_scopes:
+                        full_scope_name              = '.'.join(hier)
+                        new_scope                    = Scope(full_scope_name,self)
+                        scopes_stack[-1][scope_name] = new_scope
+                        self.scopes[full_scope_name] = new_scope
+                        scopes_stack.append(new_scope)    
                 elif '$upscope' in line:
                     hier.pop()
+                    if store_scopes:
+                        scopes_stack.pop()
                 elif '$var' in line:
                     ls = line.split()
                     type = ls[1]
@@ -151,6 +176,8 @@ class VCDVCD(object):
                     name = ''.join(ls[4:-1])
                     path = '.'.join(hier)
                     reference = path + '.' + name
+                    if store_scopes:
+                        scopes_stack[-1][name] = reference
                     if (reference in signals) or all_sigs:
                         self.signals.append(reference)
                         if identifier_code not in self.data:
@@ -187,6 +214,11 @@ class VCDVCD(object):
             for aSignal in filter( lambda x: isinstance(x, Signal),self.data):
                 aSignal.endtime = self.endtime
 
+            if save_hierarchy:
+                import json
+                with open(save_hierarchy, 'w', encoding='utf-8') as f:
+                    json.dump(self.hierarchy, f, ensure_ascii=False, indent=4)
+
     def _add_value_identifier_code(
         self, time, value, identifier_code,
         cur_sig_vals, callbacks
@@ -208,13 +240,32 @@ class VCDVCD(object):
 
     def __getitem__(self, refname):
         """
-        :type refname: str
-        :param refname: human readable name of a signal (reference)
+        :type refname: Union[str, re.Pattern]
+        :param refname: human readable name of a signal (reference) or a regular_expression
 
         :return: the signal for the given reference
         :rtype: Signal
         """
-        return self.data[self.references_to_ids[refname]]
+        if isinstance(refname,re.Pattern):
+            l    = []
+            for aSignal in self.signals:
+                if ( refname.search(aSignal)):
+                    l.append(aSignal)
+            for aScope in self.scopes:
+                if ( refname.search(aScope)):
+                    l.append(aScope)
+            #print(f'found {len(l)} elements {l}')
+            if len(l) == 1:
+                return self[l[0]]
+            return l
+        else:
+            #print(f'looking for {refname}')
+            if refname in self.references_to_ids:
+                return self.data[self.references_to_ids[refname]]
+            if refname in self.scopes:
+                return self.scopes[refname]
+            else:
+                return []
 
 
     def get_data(self):
@@ -300,6 +351,41 @@ class Signal(object):
 
     def __repr__(self):
         return pp.pformat(self.__dict__)
+
+class Scope(collections.MutableMapping):
+    def __init__(self, name, vcd):
+        self.vcd       = vcd
+        self.name      = name
+        self.subElements = {}
+    
+    def __len__(self):
+        return self.subElements.__len__()
+
+    def __setitem__(self, k, v) :
+        return self.subElements.__setitem__(k, v)
+
+    def __getitem__(self, k) :
+        if isinstance(k, re.Pattern):
+            pattern = '^'+re.escape(self.name)+'\.'+k.pattern
+            return self.vcd[re.compile(pattern)]
+        if k in self.subElements:
+            element = self.subElements.__getitem__(k)
+            if isinstance(element, Scope):
+                return element
+            
+            return self.vcd[element]
+    
+    def __delitem__(self, v) :
+        return self.subElements.__delitem__(v)
+    
+    def __iter__(self):
+        return self.subElements.__iter__()
+    
+    def __contains__(self, o: object) -> bool:
+        return self.subElements.__contains__(o)
+
+    def __repr__(self):
+        return self.name +'\n{\n\t' +'\n\t'.join(self.subElements)+'\n}'
 
 class StreamParserCallbacks(object):
     def enddefinitions(
