@@ -3,6 +3,7 @@ from __future__ import print_function
 import bisect
 import math
 import re
+import collections
 from decimal import Decimal
 from pprint import PrettyPrinter
 
