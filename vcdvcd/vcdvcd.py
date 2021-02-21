@@ -212,7 +212,7 @@ class VCDVCD(object):
                     self.timescale["unit"]   = unit
                     self.timescale["factor"] = Decimal(factor)
             
-            for aSignal in filter( lambda x: isinstance(x, Signal),self.data):
+            for aSignal in filter( lambda x: isinstance(x, Signal),self.data.values()):
                 aSignal.endtime = self.endtime
 
             if save_hierarchy:

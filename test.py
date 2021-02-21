@@ -30,6 +30,9 @@ class Test(unittest.TestCase):
 		self.assertEqual(signal[24], '10')
 		self.assertEqual(signal[25], '10')
 
+		non_existent_signal = vcd['non_existent_signal']
+		self.assertEqual(len(non_existent_signal),0)
+
 	def test_slice(self):
 		vcd = VCDVCD('counter_tb.vcd')
 		signal = vcd['counter_tb.out[1:0]']
@@ -51,7 +54,18 @@ class Test(unittest.TestCase):
 				self.assertEqual(signal_d, '0')
 			else:   
 				self.assertEqual(int(signal_d,2), ((t - 4)//2)%4)
-	
+		
+		signals = vcd[re.compile('out.*')]
+		self.assertEqual(len(signals),2)
+
+	def testContains(self):
+		vcd = VCDVCD('counter_tb.vcd', store_scopes=True)
+		scope_counter_tb = vcd[re.compile('counter_tb$')]
+
+		for element in ['clock','enable','reset','out[1:0]','top']:
+			self.assertTrue(	 element in scope_counter_tb)
+		
+		
 	def test_scopes(self):
 		vcd = VCDVCD('counter_tb.vcd', store_scopes=True)
 		scope_counter_tb = vcd[re.compile('counter_tb$')]
