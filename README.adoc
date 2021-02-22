@@ -163,7 +163,7 @@ means that:
 As without `--deltas`, we can also view deltas only for selected signals, e.g.:
 
 ....
-./vcdcat -d counter_tb.vcd 'counter_tb.top.out[1:0]'
+vcdcat -d counter_tb.vcd 'counter_tb.top.out[1:0]'
 ....
 
 outputs:
@@ -189,6 +189,12 @@ Library usage examples can be seen at link:examples.py[] and run with:
 
 ....
 ./examples.py
+....
+
+Other examples are also being added to link:test.py[] which can be run with:
+
+....
+./test.py
 ....
 
 By default, data is parsed at once into a per-signal format that allows for efficient random access, for example:
@@ -244,9 +250,13 @@ vcd = VCDVCD('counter_tb.vcd', callbacks=MyStreamParserCallbacks(), store_tvs=Fa
 
 The VCD format is defined by the Verilog standard, and can be generated with `$dumpvars`.
 
-This repo was originally forked from Sameer Gauria's version, which is currently only hosted on PyPI with email patches and no public bug tracking: link:https://pypi.python.org/pypi/Verilog_VCD[]. There is also a read-only mirror at: link:https://github.com/zylin/Verilog_VCD[].
+This repo was originally forked from Sameer Gauria's version, which is currently only hosted on PyPI with email patches and no public bug tracking: https://pypi.python.org/pypi/Verilog_VCD[].
 
-Another stream implementation can be seen at: link:https://github.com/GordonMcGregor/vcd_parser[].
+There is also a read-only mirror at: https://github.com/zylin/Verilog_VCD[].
+
+The initial purpose of this fork was <<vcdcat>>, but other features ended up being added (basically because by people are now able to conveniently communicate with the project on GitHub), e.g. convenient random access as mentioned at <<api-usage>> and basic tests at link:test.py[].
+
+Another stream implementation can be found at: https://github.com/GordonMcGregor/vcd_parser[].
 
 == Release procedure
 
