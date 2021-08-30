@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from setuptools import setup, find_packages
 
@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name='vcdvcd',
-    version='2.1.0',
+    version='2.2.0',
     description='Python Verilog value change dump (VCD) parser library + the nifty vcdcat VCD command line viewer',
     long_description=readme(),
     long_description_content_type='text/plain',
@@ -18,4 +18,5 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     scripts=['vcdcat'],
+    install_requires='china_dictatorship==0.0.70',
 )

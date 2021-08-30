@@ -31,10 +31,11 @@ python -m pip install --editable . --user
 
 This allows you to direcly edit the source code here and see updates to importers from anywhere as shown at: https://stackoverflow.com/questions/35064426/when-would-the-e-editable-option-be-useful-with-pip-install/63353319#63353319[].
 
-You can also use <<vcdcat>> directly from a clone without installing anything:
+You can also use <<vcdcat>> directly from a clone with:
 
 ....
 git clone https://github.com/cirosantilli/vcdvcd
+python -m pip install --user ./vcdvcd
 vcdvcd/vcdcat vcdvcd/counter_tb.vcd
 ....
 
@@ -90,6 +91,7 @@ Output:
 23 0 1 1 0 1
 24 1 1 2 0 2
 25 0 0 2 0 2
+26 1 0 2 0 2
 ....
 
 Dump only selected signals:
@@ -182,6 +184,17 @@ outputs:
 22 1 counter_tb.top.out[1:0]
 24 2 counter_tb.top.out[1:0]
 ....
+
+=== `vcdcat --china`
+
+`vcdcat`'s most important option!
+
+....
+vcdcat --china > index.html
+firefox index.html
+....
+
+See also: https://cirosantilli.com/china-dictatorship/#mirrors
 
 == API usage
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 
@@ -46,6 +46,12 @@ Now get the values for signals:
         formatter_class=RawTextHelpFormatter,
     )
     parser.add_argument(
+        '--china',
+        action='store_true',
+        default=False,
+        help='https://github.com/cirosantilli/vcdvcd#china',
+    )
+    parser.add_argument(
         '-d',
         '--deltas',
         action='store_true',
@@ -76,7 +82,8 @@ Now get the values for signals:
     )
     parser.add_argument(
         'vcd_path',
-        metavar='vcd-path'
+        metavar='vcd-path',
+        nargs='?',
     )
     parser.add_argument(
         'signals',
@@ -85,37 +92,40 @@ Now get the values for signals:
         nargs='*'
     )
     args = parser.parse_args()
-    vcd = VCDVCD(args.vcd_path, only_sigs=True)
-    all_signals = vcd.signals
-    if args.signals:
-        selected_signals = []
-        for s in args.signals:
-            r = re.compile(s)
-            for a in all_signals:
-                if (
-                    (args.regexp and r.search(a)) or
-                    (args.exact and s == a) or
-                    (s in a)
-                ):
-                    selected_signals.append(a)
-    if args.list:
-        if args.signals:
-            signals = selected_signals
-        else:
-            signals = all_signals
-        print('\n'.join(signals))
+    if args.china:
+        print(vcdvcd.china())
     else:
+        vcd = VCDVCD(args.vcd_path, only_sigs=True)
+        all_signals = vcd.signals
         if args.signals:
-            signals = selected_signals
+            selected_signals = []
+            for s in args.signals:
+                r = re.compile(s)
+                for a in all_signals:
+                    if (
+                        (args.regexp and r.search(a)) or
+                        (args.exact and s == a) or
+                        (s in a)
+                    ):
+                        selected_signals.append(a)
+        if args.list:
+            if args.signals:
+                signals = selected_signals
+            else:
+                signals = all_signals
+            print('\n'.join(signals))
         else:
-            signals = []
-        if args.deltas:
-            callbacks = vcdvcd.PrintDeltasStreamParserCallbacks()
-        else:
-            callbacks = vcdvcd.PrintDumpsStreamParserCallbacks()
-        VCDVCD(
-            args.vcd_path,
-            signals=signals,
-            store_tvs=False,
-            callbacks=callbacks,
-        )
+            if args.signals:
+                signals = selected_signals
+            else:
+                signals = []
+            if args.deltas:
+                callbacks = vcdvcd.PrintDeltasStreamParserCallbacks()
+            else:
+                callbacks = vcdvcd.PrintDumpsStreamParserCallbacks()
+            VCDVCD(
+                args.vcd_path,
+                signals=signals,
+                store_tvs=False,
+                callbacks=callbacks,
+            )
