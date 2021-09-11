@@ -20,6 +20,24 @@ $end
 0"
 '''
 
+    SINGLE_LINE_VALUE_CHANGE_VCD = '''
+$timescale 1 us $end
+$scope module X $end
+$var wire 1 ! D0 $end
+$var wire 1 " D1 $end
+$upscope $end
+$enddefinitions $end
+
+#0  0! 1"
+#503236  1!
+#649868  0"
+#753652  1"
+#880824  0"
+#984044  1"
+#1110740  0"
+#1214876
+'''
+
     def test_data(self):
         vcd = VCDVCD('counter_tb.vcd')
         signal = vcd['counter_tb.out[1:0]']
@@ -139,6 +157,24 @@ $end
         vcd = VCDVCD(vcd_string=self.SMALL_CLOCK_VCD)
         with self.assertRaises(KeyError):
             vcd['non_existent_signal']
+
+    def test_single_line_value_change(self):
+        """
+        Tests correct parsing when time stamp and value change are on the same
+        line, separated by white space
+        """
+        vcd = VCDVCD(vcd_string=self.SINGLE_LINE_VALUE_CHANGE_VCD)
+        D0 = vcd['X.D0']
+        D1 = vcd['X.D1']
+        self.assertEqual(D0[0], '0')
+        self.assertEqual(D0[503236], '1')
+
+        self.assertEqual(D1[0], '1')
+        self.assertEqual(D1[649868], '0')
+        self.assertEqual(D1[753652], '1')
+        self.assertEqual(D1[880824], '0')
+        self.assertEqual(D1[984044], '1')
+        self.assertEqual(D1[1110740], '0')
 
 if __name__ == '__main__':
     unittest.main()

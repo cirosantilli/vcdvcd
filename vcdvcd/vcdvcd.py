@@ -130,6 +130,18 @@ class VCDVCD(object):
         num_sigs = 0
         time = 0
         first_time = True
+
+        def handle_value_change(line):
+            value = line[0]
+            identifier_code = line[1:]
+            self._add_value_identifier_code(
+                time, value, identifier_code, cur_sig_vals, callbacks)
+
+        def handle_vector_value_change(line):
+            value, identifier_code = line[1:].split()
+            self._add_value_identifier_code(
+                time, value, identifier_code, cur_sig_vals, callbacks)
+
         if vcd_string is not None:
             vcd_file = io.StringIO(vcd_string)
         else:
@@ -142,23 +154,29 @@ class VCDVCD(object):
             line = line.strip()
             if line == '':
                 continue
-            if line0 in self._VECTOR_VALUE_CHANGE:
-                value, identifier_code = line[1:].split()
-                self._add_value_identifier_code(
-                    time, value, identifier_code, cur_sig_vals, callbacks)
-            elif line0 in self._VALUE:
-                value = line0
-                identifier_code = line[1:]
-                self._add_value_identifier_code(
-                    time, value, identifier_code, cur_sig_vals, callbacks)
-            elif line0 == '#':
+            if line0 == '#':
                 callbacks.time(self, time, cur_sig_vals)
-                time = int(line[1:])
+                time = int(line.split()[0][1:])
                 if first_time:
                     self.begintime = time
                     first_time = False
                 self.endtime = time
                 self.signal_changed = False
+                # If value change happens on same line, handle them here
+                changes = list(filter(None, line.split()[1:]))
+                if len(changes) > 0:
+                    for change in changes:
+                        if change[0] in self._VALUE:
+                            handle_value_change(change)
+                        elif change[0] in  self._VECTOR_VALUE_CHANGE:
+                            # This is not supported by this simple parser,
+                            # because the value and identifier are separated by
+                            # whitespace
+                            raise Exception("Vector value changes have to be on a separate line!")
+            elif line0 in self._VECTOR_VALUE_CHANGE:
+                handle_vector_value_change(line)
+            elif line0 in self._VALUE:
+                handle_value_change(line)
             elif '$enddefinitions' in line:
                 if only_sigs:
                     break
@@ -245,6 +263,7 @@ class VCDVCD(object):
             if self._store_tvs:
                 entry.tv.append((time, value))
             cur_sig_vals[identifier_code] = value
+
 
     def __getitem__(self, refname):
         """
