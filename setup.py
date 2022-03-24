@@ -18,5 +18,5 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     scripts=['vcdcat'],
-    install_requires='china_dictatorship==0.0.70',
+    install_requires='china_dictatorship==0.0.74',
 )
