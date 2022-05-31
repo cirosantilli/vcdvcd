@@ -122,6 +122,7 @@ class VCDVCD(object):
         self.signals = []
         self.timescale = {}
         self.signal_changed = False
+        self.warnings = []
 
         self._store_tvs = store_tvs
 
@@ -143,7 +144,11 @@ class VCDVCD(object):
                 time, value, identifier_code, cur_sig_vals, callbacks)
 
         def handle_vector_value_change(line):
-            value, identifier_code = line[1:].split()
+            fields = line[1:].split()
+            if len(fields) < 2:
+                self.warnings.append(f"Warning: Ignored missing identifier in line: `{line}`.")
+                return
+            value, identifier_code = fields
             self._add_value_identifier_code(
                 time, value, identifier_code, cur_sig_vals, callbacks)
 
