@@ -174,5 +174,24 @@ $enddefinitions $end
         self.assertEqual(D1[30], '1')
         self.assertEqual(D1[35], '0')
 
+# Test deviations to the VCD syntax
+
+    MISSING_IDENTIFIER = '''$var wire 2 ! out [1:0] $end
+$enddefinitions $end
+#0
+$dumpvars
+bx !
+$end
+#1
+b1
+'''
+
+    def test_missing_identifier(self):
+        """
+        Tests correct parsing when time stamp and value change are on the same
+        line, separated by white space
+        """
+        vcd = VCDVCD(vcd_string=self.MISSING_IDENTIFIER)
+
 if __name__ == '__main__':
     unittest.main()
