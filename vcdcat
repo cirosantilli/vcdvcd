@@ -105,7 +105,7 @@ Now get the values for signals:
                     if (
                         (args.regexp and r.search(a)) or
                         (args.exact and s == a) or
-                        (s in a)
+                        (not args.exact and s in a)
                     ):
                         selected_signals.append(a)
         if args.list:
