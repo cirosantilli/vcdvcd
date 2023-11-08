@@ -36,6 +36,28 @@ $enddefinitions $end
 #40
 '''
 
+    EXTRA_METADATA_VCD = '''$date
+	Created November 08, 2023
+$end
+$version
+	Dumped by version v1.1
+$end
+$timescale 6666ps $end
+$scope module X $end
+$var wire 1 ! D0 $end
+$var wire 1 " D1 $end
+$enddefinitions $end
+
+$dumpvars
+x!
+x"
+$end
+
+#10  1!
+#15  0"
+#20  1"
+'''
+
     def test_data(self):
         vcd = VCDVCD('counter_tb.vcd')
         signal = vcd['counter_tb.out[1:0]']
@@ -173,6 +195,29 @@ $enddefinitions $end
         self.assertEqual(D1[25], '0')
         self.assertEqual(D1[30], '1')
         self.assertEqual(D1[35], '0')
+
+    def test_simple_timescale_values(self):
+        from decimal import Decimal
+
+        # simple timescale
+        vcd = VCDVCD(vcd_string=self.SINGLE_LINE_VALUE_CHANGE_VCD)
+        self.assertEqual(vcd.timescale["timescale"], Decimal('0.000001'))
+        self.assertEqual(vcd.timescale["magnitude"], 1)
+        self.assertEqual(vcd.timescale["unit"], "us")
+        self.assertEqual(vcd.timescale["factor"], Decimal('0.000001'))
+
+        # No timescale
+        vcd = VCDVCD(vcd_string=self.SMALL_CLOCK_VCD)
+        self.assertEqual(len(vcd.timescale), 0)
+
+        # Odd timescale based on 150MHz
+        vcd = VCDVCD(vcd_string=self.EXTRA_METADATA_VCD)
+        self.assertEqual(vcd.timescale["timescale"], Decimal('6.666E-9'))
+        self.assertEqual(vcd.timescale["magnitude"], 6666)
+        self.assertEqual(vcd.timescale["unit"], "ps")
+        self.assertEqual(vcd.timescale["factor"], Decimal('1E-12'))
+        # but its badly rounded
+        self.assertAlmostEqual(Decimal('6.666E-9') * Decimal('150E6'), 1, places=3)
 
 if __name__ == '__main__':
     unittest.main()

@@ -228,10 +228,6 @@ class VCDVCD(object):
                             break
                 timescale = ' '.join(line.split()[1:-1])
                 magnitude = Decimal(re.findall(r"\d+|$", timescale)[0])
-                if magnitude not in [1, 10, 100]:
-                    print("Error: Magnitude of timescale must be one of 1, 10, or 100. "\
-                        + "Current magnitude is: {}".format(magnitude))
-                    exit(-1)
                 unit      = re.findall(r"s|ms|us|ns|ps|fs|$", timescale)[0]
                 factor = {
                     "s":  '1e0',
