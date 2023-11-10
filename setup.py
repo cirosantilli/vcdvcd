@@ -18,5 +18,5 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     scripts=['vcdcat'],
-    install_requires='china_dictatorship==0.0.74',
+    install_requires='china_dictatorship @ https://github.com/cirosantilli/china-dictatorship/releases/download/0.0.74/china_dictatorship-0.0.74-py3-none-any.whl',
 )
