@@ -32,7 +32,9 @@ Install master directly from this repository for development with `--editable`:
 ....
 git clone https://github.com/cirosantilli/vcdvcd
 cd vcdvcd
-python -m pip install --editable . --user
+virtualenv -p python3 .venv
+. .venv/bin/activate
+python -m pip install --editable .
 ....
 
 This allows you to direcly edit the source code here and see updates to importers from anywhere as shown at: https://stackoverflow.com/questions/35064426/when-would-the-e-editable-option-be-useful-with-pip-install/63353319#63353319[].
@@ -297,7 +299,7 @@ vim setup.py
 Create a tag and push it:
 
 ....
-v=v2.0.2
+v=v2.3.4
 git add setup.py
 git commit -m $v
 git tag -a $v -m $v

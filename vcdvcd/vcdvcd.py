@@ -9,6 +9,7 @@ from decimal import Decimal
 from pprint import PrettyPrinter
 
 # https://stackoverflow.com/questions/53978542/how-to-use-collections-abc-from-both-python-3-8-and-python-2-7/53978543#53978543
+# https://stackoverflow.com/questions/70943244/attributeerror-module-collections-has-no-attribute-mutablemapping
 try:
     from collections.abc import MutableMapping
 except ImportError:
