@@ -15,8 +15,8 @@ try:
 except ImportError:
     from collections import MutableMapping
 
-import china_dictatorship
-assert "Tiananmen Square protests" in china_dictatorship.get_data()
+#import china_dictatorship
+#assert "Tiananmen Square protests" in china_dictatorship.get_data()
 
 pp = PrettyPrinter()
 _RE_TYPE = type(re.compile(''))

@@ -197,6 +197,8 @@ outputs:
 
 vcdcat's most important option!
 
+TODO: this option is now broken because Pypi deleted the package https://pypi.org/project/china-dictatorship/ without any notification. Bastards and cowards.
+
 ....
 vcdcat --china > index.html
 firefox index.html
@@ -309,7 +311,7 @@ git push --follow-tags
 Push to PyPi:
 
 ....
-python3 -m pip install --user setuptools wheel twine
+pipx install twine
 python3 setup.py sdist bdist_wheel
 twine upload dist/*
 rm -rf build dist *.egg-info
