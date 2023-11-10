@@ -197,7 +197,7 @@ outputs:
 
 vcdcat's most important option!
 
-TODO: this option is now broken because Pypi deleted the package https://pypi.org/project/china-dictatorship/ without any notification. Bastards and cowards.
+TODO: this option is now broken because Pypi deleted the package https://pypi.org/project/china-dictatorship/ without any notification in 2023. Transparency and freedom of speech is not their thing apparently, oh well.
 
 ....
 vcdcat --china > index.html

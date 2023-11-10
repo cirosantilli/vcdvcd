@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name='vcdvcd',
-    version='2.3.3',
+    version='2.3.4',
     description='Python Verilog value change dump (VCD) parser library + the nifty vcdcat VCD command line viewer',
     long_description=readme(),
     long_description_content_type='text/plain',
@@ -21,6 +21,6 @@ setup(
     # Deleted by PyPi without any warning
     #install_requires='china_dictatorship==0.0.74',
     # Works but then prevent upload to PyPi with:
-    # Invalid value for requires_dist. Error: Can't have direct dependency. Bastards.
+    # Invalid value for requires_dist. Error: Can't have direct dependency.
     #install_requires='china_dictatorship @ https://github.com/cirosantilli/china-dictatorship/releases/download/0.0.74/china_dictatorship-0.0.74-py3-none-any.whl',
 )
