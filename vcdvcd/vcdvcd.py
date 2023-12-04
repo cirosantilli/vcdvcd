@@ -235,7 +235,7 @@ class VCDVCD(object):
                         if '$end'  in line:
                             break
                 timescale = ' '.join(line.split()[1:-1])
-                magnitude = Decimal(re.findall(r"\d+|$", timescale)[0])
+                magnitude = Decimal(re.findall(r"(\d+(\.\d+)?)|$", timescale)[0][0])
                 unit      = re.findall(r"s|ms|us|ns|ps|fs|$", timescale)[0]
                 factor = {
                     "s":  '1e0',
@@ -398,7 +398,7 @@ class Scope(MutableMapping):
 
     def __getitem__(self, k) :
         if isinstance(k, _RE_TYPE):
-            pattern = '^'+re.escape(self.name)+'\.'+k.pattern
+            pattern = '^'+re.escape(self.name)+r'\.'+k.pattern
             return self.vcd[re.compile(pattern)]
         if k in self.subElements:
             element = self.subElements.__getitem__(k)

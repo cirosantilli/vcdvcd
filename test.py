@@ -36,6 +36,23 @@ $enddefinitions $end
 #40
 '''
 
+    SINGLE_LINE_VALUE_CHANGE_FRACTIONAL_TIMESCALE_VCD = '''$timescale 0.001 ms $end
+$scope module X $end
+$var wire 1 ! D0 $end
+$var wire 1 " D1 $end
+$upscope $end
+$enddefinitions $end
+
+#0  0! 1"
+#10  1!
+#15  0"
+#20  1"
+#25  0"
+#30  1"
+#35  0"
+#40
+'''
+
     EXTRA_METADATA_VCD = '''$date
 	Created November 08, 2023
 $end
@@ -205,6 +222,10 @@ $end
         self.assertEqual(vcd.timescale["magnitude"], 1)
         self.assertEqual(vcd.timescale["unit"], "us")
         self.assertEqual(vcd.timescale["factor"], Decimal('0.000001'))
+
+        # fractional timescale
+        vcd = VCDVCD(vcd_string=self.SINGLE_LINE_VALUE_CHANGE_FRACTIONAL_TIMESCALE_VCD)
+        self.assertEqual(vcd.timescale["timescale"], Decimal('0.000001'))
 
         # No timescale
         vcd = VCDVCD(vcd_string=self.SMALL_CLOCK_VCD)
