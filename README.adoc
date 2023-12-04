@@ -342,3 +342,7 @@ python3 setup.py sdist bdist_wheel
 twine upload dist/*
 rm -rf build dist *.egg-info
 ....
+
+== Backlinks
+
+* https://arxiv.org/html/2506.03590v1 VCDiag: Classifying Erroneous Waveforms for Failure Triage Acceleration
