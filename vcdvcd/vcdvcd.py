@@ -5,6 +5,7 @@ import io
 import json
 import math
 import re
+import signal
 from decimal import Decimal
 from pprint import PrettyPrinter
 
@@ -14,6 +15,12 @@ try:
     from collections.abc import MutableMapping
 except ImportError:
     from collections import MutableMapping
+
+# Handle broken pipes gracefully
+try:
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+except (ValueError, AttributeError):
+    pass
 
 #import china_dictatorship
 #assert "Tiananmen Square protests" in china_dictatorship.get_data()
