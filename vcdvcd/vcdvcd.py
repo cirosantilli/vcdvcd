@@ -146,6 +146,7 @@ class VCDVCD(object):
             signals = []
         if signal_res is None:
             signal_res = []
+        signals_set = set(signals)
         if callbacks is None:
             callbacks = StreamParserCallbacks()
         all_sigs = not signals and not signal_res
@@ -238,7 +239,7 @@ class VCDVCD(object):
                     if signal_re.match(reference):
                         matches_re = True
                         break
-                if matches_re or (reference in signals) or all_sigs:
+                if matches_re or (reference in signals_set) or all_sigs:
                     self.signals.append(reference)
                     if identifier_code not in self.data:
                         self.data[identifier_code] = Signal(size, type)
