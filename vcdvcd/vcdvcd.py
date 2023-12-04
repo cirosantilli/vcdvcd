@@ -144,7 +144,6 @@ class VCDVCD(object):
         all_sigs = not signals
         cur_sig_vals = {}
         hier = []
-        num_sigs = 0
         time = 0
         first_time = True
 
