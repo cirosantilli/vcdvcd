@@ -197,7 +197,14 @@ outputs:
 
 vcdcat's most important option!
 
-TODO: this option is now broken because Pypi deleted the package https://pypi.org/project/china-dictatorship/ without any notification. Bastards and cowards.
+TODO: this option is now broken because Pypi deleted the package https://pypi.org/project/china-dictatorship/ without any notification. Cowards!
+
+* https://github.com/cirosantilli/china-dictatorship
+* https://cirosantilli.com/china-dictatorship/mirrors
+* https://mastodon.social/@cirosantilli/111384334603801231
+* https://x.com/cirosantilli/status/1722831661253988424
+
+When it was working you could:
 
 ....
 vcdcat --china > index.html
