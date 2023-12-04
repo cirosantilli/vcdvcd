@@ -190,6 +190,31 @@ $end
         self.assertEqual(signal[2], '0')
         self.assertEqual(signal[3], '0')
 
+    def test_comment(self):
+        vcd = VCDVCD(vcd_string='''$var reg 1 " clock $end
+$comment
+asdf
+$end
+$enddefinitions $end
+#0
+$dumpvars
+1"
+$comment
+0"
+$end
+$end
+#1
+1"
+#2
+0"
+''')
+        signal = vcd['clock']
+        self.assertEqual(signal[0], '1')
+        self.assertEqual(signal[1], '1')
+        self.assertEqual(signal[2], '0')
+        self.assertEqual(signal[3], '0')
+
+
     def test_nonexistent_signal(self):
         vcd = VCDVCD(vcd_string=self.SMALL_CLOCK_VCD)
         with self.assertRaises(KeyError):

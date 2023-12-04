@@ -249,6 +249,12 @@ class VCDVCD(object):
                 self.timescale["magnitude"] = magnitude
                 self.timescale["unit"]   = unit
                 self.timescale["factor"] = Decimal(factor)
+            elif '$comment' in line:
+                if not '$end' in line:
+                    while True:
+                        line = vcd_file.readline()
+                        if '$end' in line:
+                            break
         callbacks.time(self, time, cur_sig_vals)
         for aSignal in filter( lambda x: isinstance(x, Signal),self.data.values()):
             aSignal.endtime = self.endtime
