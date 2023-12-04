@@ -94,7 +94,7 @@ $end
 
     def test_REs(self):
         vcd = VCDVCD('counter_tb.vcd')
-        signal = vcd[re.compile('counter_tb\.out.*')]
+        signal = vcd[re.compile(r'counter_tb\.out.*')]
         for t, signal_d in enumerate(signal[0:30]):
             if t < 2:
                 self.assertEqual(signal_d, 'x')
