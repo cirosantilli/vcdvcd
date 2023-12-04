@@ -190,6 +190,14 @@ $end
         self.assertEqual(signal[2], '0')
         self.assertEqual(signal[3], '0')
 
+    def test_to_time(self):
+        vcd = VCDVCD(vcd_string=self.SMALL_CLOCK_VCD, to_time=1)
+        signal = vcd['clock']
+        self.assertEqual(signal[0], '0')
+        self.assertEqual(signal[1], '1')
+        self.assertEqual(signal[2], '1')
+        self.assertEqual(signal[3], '1')
+
     def test_comment(self):
         vcd = VCDVCD(vcd_string='''$var reg 1 " clock $end
 $comment

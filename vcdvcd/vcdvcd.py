@@ -2,10 +2,10 @@ from __future__ import print_function
 
 import bisect
 import io
-import json
 import math
 import re
 import signal
+from typing import Optional
 from decimal import Decimal
 from pprint import PrettyPrinter
 
@@ -43,6 +43,7 @@ class VCDVCD(object):
         store_scopes=False,
         callbacks=None,
         vcd_string=None,
+        to_time: Optional[int] = None
     ):
         """
         Parse a VCD file, and store information about it in this object.
@@ -119,6 +120,9 @@ class VCDVCD(object):
         :param vcd_string: use this string as the VCD content instead of vcd_path.
                            vcd_path is ignored.
         :type vcd_string: Union[NoeType,str]
+
+        :param to_time: Only load value changes until and including this timestamp
+        :type to_time : Optional[int]
         """
         self.hierarchy = {}
         self.scopes    = {}
@@ -175,6 +179,8 @@ class VCDVCD(object):
                     first_time = False
                 self.endtime = time
                 self.signal_changed = False
+                if to_time is not None and time > to_time:
+                    break
                 # If value change happens on same line, handle them here
                 changes = list(filter(None, line.split()[1:]))
                 if len(changes) > 0:

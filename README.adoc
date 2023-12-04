@@ -233,7 +233,7 @@ or to run just one example do:
 ./test.py Test.test_simple_timescale_values
 ....
 
-By default, data is parsed at once into a per-signal format that allows for efficient random access, for example as also viewable at ink:example_small.py[]:
+By default, data is parsed at once into a per-signal format that allows for efficient random access, for example as also viewable at link:example_small.py[]:
 
 ....
 from vcdvcd import VCDVCD
