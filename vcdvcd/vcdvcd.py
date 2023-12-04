@@ -39,6 +39,7 @@ class VCDVCD(object):
         vcd_path=None,
         only_sigs=False,
         signals=None,
+        signal_res: list[re.Pattern] = None,
         store_tvs=True,
         store_scopes=False,
         callbacks=None,
@@ -109,6 +110,9 @@ class VCDVCD(object):
                         If repeated signals are given, they are printed twice.
         :type  signals: List[str]
 
+        :param signal_res: same as signals, but uses regular expressions
+        :type  signal_res: list[re.Pattern]
+
         :param store_scopes: if False, don't store scopes that groups signals
                         and possibly other scopes.
 
@@ -132,6 +136,7 @@ class VCDVCD(object):
         self.begintime = 0
         self.references_to_ids = {}
         self.signals = []
+        self.signal_res = []
         self.timescale = {}
         self.signal_changed = False
 
@@ -139,9 +144,11 @@ class VCDVCD(object):
 
         if signals is None:
             signals = []
+        if signal_res is None:
+            signal_res = []
         if callbacks is None:
             callbacks = StreamParserCallbacks()
-        all_sigs = not signals
+        all_sigs = not signals and not signal_res
         cur_sig_vals = {}
         hier = []
         time = 0
@@ -226,7 +233,12 @@ class VCDVCD(object):
                     reference = name
                 if store_scopes:
                     scopes_stack[-1][name] = reference
-                if (reference in signals) or all_sigs:
+                matches_re = False
+                for signal_re in signal_res:
+                    if signal_re.match(reference):
+                        matches_re = True
+                        break
+                if matches_re or (reference in signals) or all_sigs:
                     self.signals.append(reference)
                     if identifier_code not in self.data:
                         self.data[identifier_code] = Signal(size, type)

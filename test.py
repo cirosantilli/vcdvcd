@@ -98,6 +98,24 @@ $end
         self.assertEqual(signal[24], '10')
         self.assertEqual(signal[25], '10')
 
+    def test_constructor_signals(self):
+        vcd = VCDVCD('counter_tb.vcd', signals=['counter_tb.out[1:0]', 'counter_tb.clock'])
+        vcd['counter_tb.out[1:0]']
+        vcd['counter_tb.clock']
+        with self.assertRaises(KeyError):
+            vcd['counter_tb.enable']
+
+    def test_constructor_signal_res(self):
+        vcd = VCDVCD('counter_tb.vcd', signal_res=[
+            re.compile(r'counter_tb\.out\[1:0\]|counter_tb\.clock'),
+            re.compile(r'counter_tb\.top\..*'),
+        ])
+        vcd['counter_tb.out[1:0]']
+        vcd['counter_tb.clock']
+        vcd['counter_tb.top.clock']
+        with self.assertRaises(KeyError):
+            vcd['counter_tb.enable']
+
     def test_slice(self):
         vcd = VCDVCD('counter_tb.vcd')
         signal = vcd['counter_tb.out[1:0]']
