@@ -22,9 +22,6 @@ try:
 except (ValueError, AttributeError):
     pass
 
-#import china_dictatorship
-#assert "Tiananmen Square protests" in china_dictatorship.get_data()
-
 pp = PrettyPrinter()
 _RE_TYPE = type(re.compile(''))
 
@@ -43,6 +40,7 @@ class VCDVCD(object):
         store_scopes=False,
         callbacks=None,
         vcd_string=None,
+        to_time : int = -1
     ):
         """
         Parse a VCD file, and store information about it in this object.
@@ -119,6 +117,9 @@ class VCDVCD(object):
         :param vcd_string: use this string as the VCD content instead of vcd_path.
                            vcd_path is ignored.
         :type vcd_string: Union[NoeType,str]
+
+        :param to_time: Only load value changes until and including this timestamp
+        :type to_time : int
         """
         self.hierarchy = {}
         self.scopes    = {}
@@ -168,13 +169,21 @@ class VCDVCD(object):
             if line == '':
                 continue
             if line0 == '#':
+                # Call callback for the previous value change
                 callbacks.time(self, time, cur_sig_vals)
+
                 time = int(line.split()[0][1:])
                 if first_time:
                     self.begintime = time
                     first_time = False
+
                 self.endtime = time
                 self.signal_changed = False
+
+                if to_time > -1 and time > int(to_time):
+                    print("Reached to_time " + str(to_time))
+                    break
+
                 # If value change happens on same line, handle them here
                 changes = list(filter(None, line.split()[1:]))
                 if len(changes) > 0:
@@ -191,7 +200,7 @@ class VCDVCD(object):
             elif line0 in self._VALUE:
                 handle_value_change(line)
             elif '$enddefinitions' in line:
-                if only_sigs:
+                if bool(only_sigs):
                     break
                 callbacks.enddefinitions(self, signals, cur_sig_vals)
             elif '$scope' in line:
@@ -255,6 +264,7 @@ class VCDVCD(object):
                         line = vcd_file.readline()
                         if '$end' in line:
                             break
+
         callbacks.time(self, time, cur_sig_vals)
         for aSignal in filter( lambda x: isinstance(x, Signal),self.data.values()):
             aSignal.endtime = self.endtime
@@ -558,6 +568,3 @@ def binary_string_to_hex(s):
         if not c in '01':
             return c
     return hex(int(s, 2))[2:]
-
-def china():
-    return china_dictatorship.get_data()
