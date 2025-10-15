@@ -38,7 +38,7 @@ class VCDVCD(object):
         self,
         vcd_path=None,
         only_sigs=False,
-        signals=None,
+        signals: list = None,
         store_tvs=True,
         store_scopes=False,
         callbacks=None,
@@ -101,7 +101,7 @@ class VCDVCD(object):
                         This speeds up parsing if you only want the list of signals.
         :type  only_sigs: bool
 
-        :param signals: only consider signals in this list.
+        :param signals: only consider signals in this list, or which match a regular expression in this list.
                         If empty, all signals are considered.
                         Printing commands however will only print every wire
                         once with the first reference name found.
@@ -227,7 +227,19 @@ class VCDVCD(object):
                     reference = name
                 if store_scopes:
                     scopes_stack[-1][name] = reference
-                if (reference in signals) or all_sigs:
+
+                # If a list of signals (or regular expressions) is given, only add the current signal
+                # if its name reference matches one of the signals/expressions
+                add_sig = False
+                if not all_sigs:
+                    for s in (signals if isinstance(signals, list) else [signals]):
+                        s_pattern = re.compile(s)
+                        if reference == s or s_pattern.search(reference):
+                            add_sig = True
+                            break
+                else:
+                    add_sig = True
+                if add_sig:
                     self.signals.append(reference)
                     if identifier_code not in self.data:
                         self.data[identifier_code] = Signal(size, type)

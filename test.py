@@ -273,5 +273,66 @@ $end
         # but its badly rounded
         self.assertAlmostEqual(Decimal('6.666E-9') * Decimal('150E6'), 1, places=3)
 
+    def test_signal_filter(self):
+        vcd = VCDVCD('counter_tb.vcd', signals=['counter_tb.top.out[1:0]'])
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.top.out[1:0]'])
+        vcd = VCDVCD('counter_tb.vcd', signals='counter_tb.top.out[1:0]')
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.top.out[1:0]'])
+        vcd = VCDVCD('counter_tb.vcd', signals='counter_tb.top.out[1:0],counter_tb.enable')
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        with self.assertRaises(KeyError):
+            vcd['counter_tb.top.out[1:0]']
+        with self.assertRaises(KeyError):
+            vcd['counter_tb.enable']
+        vcd = VCDVCD('counter_tb.vcd', signals=['counter_tb.top.out[1:0]','counter_tb.enable'])
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.top.out[1:0]'])
+        self.assertIsNotNone(vcd['counter_tb.enable'])
+        with self.assertRaises(KeyError):
+            vcd['counter_tb.clock']
+        vcd = VCDVCD('counter_tb.vcd', signals=['.*ck.*','.*o.*'])
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.clock'])
+        self.assertIsNotNone(vcd['counter_tb.enable'])
+        self.assertIsNotNone(vcd['counter_tb.top.out[1:0]'])
+        vcd = VCDVCD('counter_tb.vcd', signals=['.*ck.*','counter_tb.enable'])
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.clock'])
+        self.assertIsNotNone(vcd['counter_tb.enable'])
+        vcd = VCDVCD('counter_tb.vcd', signals='counter_tb.*')
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.clock'])
+        self.assertIsNotNone(vcd['counter_tb.enable'])
+        self.assertIsNotNone(vcd['counter_tb.top.out[1:0]'])
+        vcd = VCDVCD('counter_tb.vcd', signals=['counter_tb.top.out[1:0]','counter_tb.enable'])
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.top.out[1:0]'])
+        self.assertIsNotNone(vcd['counter_tb.enable'])
+        with self.assertRaises(KeyError):
+            vcd['counter_tb.clock']
+        vcd = VCDVCD('counter_tb.vcd', signals=['.*ck.*','.*o.*'])
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.clock'])
+        self.assertIsNotNone(vcd['counter_tb.enable'])
+        self.assertIsNotNone(vcd['counter_tb.top.out[1:0]'])
+        vcd = VCDVCD('counter_tb.vcd', signals=['.*ck.*','counter_tb.enable'])
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.clock'])
+        self.assertIsNotNone(vcd['counter_tb.enable'])
+        with self.assertRaises(KeyError):
+            vcd['counter_tb.top.out[1:0]']
+        vcd = VCDVCD('counter_tb.vcd', signals='counter_tb.*')
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.clock'])
+        self.assertIsNotNone(vcd['counter_tb.enable'])
+        self.assertIsNotNone(vcd['counter_tb.top.out[1:0]'])
+        vcd = VCDVCD('counter_tb.vcd')
+        self.assertIsInstance(vcd, vcdvcd.VCDVCD)
+        self.assertIsNotNone(vcd['counter_tb.clock'])
+        self.assertIsNotNone(vcd['counter_tb.enable'])
+        self.assertIsNotNone(vcd['counter_tb.top.out[1:0]'])
+
 if __name__ == '__main__':
     unittest.main()
